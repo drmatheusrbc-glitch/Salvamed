@@ -190,13 +190,13 @@ export const DRUGS: Drug[] = [
     presentation: '5 mg/mL (5 mL)',
     dilution: '1 AMP (10ML) + 240ML SF/SG5%',
     concentrationString: '200 MCG/ML',
-    doseString: '5 - 100 mcg/min',
+    doseString: '0,5 - 10 mcg/kg/min',
     notes: 'Titular até alívio sintomas/PA alvo. Contraindicada se uso de inibidores PDE-5.',
     type: CalculationType.Continuous,
     concentrationVal: 200,
     concentrationUnit: 'mcg/ml',
-    doseUnit: UnitType.McgMin,
-    isWeightBased: false
+    doseUnit: UnitType.McgKgMin,
+    isWeightBased: true
   },
   {
     id: 'nipride',
@@ -333,7 +333,7 @@ export const DRUGS: Drug[] = [
     category: 'sedation_proc',
     presentation: 'Mix',
     dilution: '2ML Quetamina + 10ML Propofol + 8ML AD/SF',
-    concentrationString: '10 MG/ML',
+    concentrationString: '5mg/ml propofol : 5mg/ml cetamina',
     doseString: '0,5 a 1 mg/kg',
     notes: 'Fazer 0,5 a 1 mL para cada 10kg.',
     type: CalculationType.Bolus,
