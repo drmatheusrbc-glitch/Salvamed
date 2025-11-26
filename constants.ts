@@ -342,6 +342,22 @@ export const DRUGS: Drug[] = [
     doseUnit: UnitType.MgKg,
     isWeightBased: true
   },
+  {
+    id: 'ketodex',
+    name: 'Ketodex',
+    groupName: 'Ketodex',
+    category: 'sedation_proc',
+    presentation: 'Mix',
+    dilution: '2ML QUETAMINA + 1ML PRECEDEX + 17ML AD/SF',
+    concentrationString: '5mg/ml cetamina : 5mcg/ml precedex',
+    doseString: '1 a 2 mL da solução a cada 5 kg',
+    notes: 'Equivalência: 1 mL da solução/5kg = 1 mg/kg de Cetamina + 1 mcg/kg de Precedex. Para cálculo na ferramenta, utilize a dose em mg/kg (1-2).',
+    type: CalculationType.Bolus,
+    concentrationVal: 5,
+    concentrationUnit: 'mg/ml',
+    doseUnit: UnitType.MgKg,
+    isWeightBased: true
+  },
 
   // --- DROGAS IOT ---
   {
