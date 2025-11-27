@@ -5,13 +5,15 @@ import { ChevronDown, ChevronUp, Activity, AlertTriangle, Droplet, Info, Calcula
 const SodiumCalculator: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'hypo' | 'hyper'>('hypo');
 
-  // --- STATE FOR HYPERNATREMIA ---
+  // --- SHARED STATE ---
   const [weight, setWeight] = useState<string>('');
   const [age, setAge] = useState<string>('');
   const [sex, setSex] = useState<'male' | 'female'>('male');
   const [currentNa, setCurrentNa] = useState<string>('');
   const [targetNa, setTargetNa] = useState<string>('');
-  const [solution, setSolution] = useState<string>('sg5'); // Default to Free Water (SG5%) often used, or 0.45
+  
+  // Solution key (different options based on tab)
+  const [solution, setSolution] = useState<string>('sf09'); 
 
   const [result, setResult] = useState<{
     tbw: number;
@@ -22,10 +24,18 @@ const SodiumCalculator: React.FC = () => {
   } | null>(null);
 
   // --- CONSTANTS ---
-  const SOLUTIONS: Record<string, { label: string; na: number }> = {
-    'sf09': { label: 'Soro Fisiológico 0,9%', na: 154 },
+  
+  // Solutions for Hypernatremia (Lowering Na)
+  const HYPER_SOLUTIONS: Record<string, { label: string; na: number }> = {
     'sg5': { label: 'Soro Glicosado 5%', na: 0 },
-    'nacl045': { label: 'NaCl 0,45%', na: 77 },
+    'nacl045': { label: 'NaCl 0,45% (77 mEq)', na: 77 },
+    'sf09': { label: 'Soro Fisiológico 0,9%', na: 154 },
+  };
+
+  // Solutions for Hyponatremia (Raising Na)
+  const HYPO_SOLUTIONS: Record<string, { label: string; na: number }> = {
+    'sf09': { label: 'Soro Fisiológico 0,9%', na: 154 },
+    'nacl3': { label: 'NaCl 3% (513 mEq)', na: 513 },
   };
 
   const NACL045_RECIPES = [
@@ -35,17 +45,31 @@ const SodiumCalculator: React.FC = () => {
     "22 ML NaCl 20% + 978 ML Água Destilada"
   ];
 
-  // --- CALCULATION EFFECT ---
+  const NACL3_RECIPES = [
+    "890ML SF 0,9% + 110ML NaCl 20%",
+    "850ML Água Destilada + 150ML NaCl 20%",
+    "445ML SF 0,9% + 55ML NaCl 20% (Solução de 500ml)"
+  ];
+
+  // --- EFFECTS ---
+
+  // Reset/Default solution when tab changes
   useEffect(() => {
-    if (activeTab === 'hyper') {
-      calculateHyper();
+    if (activeTab === 'hypo') {
+      setSolution('sf09');
     } else {
-      setResult(null);
+      setSolution('sg5');
     }
+    setResult(null);
+  }, [activeTab]);
+
+  // Calculate when inputs change
+  useEffect(() => {
+    calculate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weight, age, sex, currentNa, targetNa, solution, activeTab]);
 
-  const calculateHyper = () => {
+  const calculate = () => {
     const w = parseFloat(weight);
     const a = parseFloat(age);
     const naCurr = parseFloat(currentNa);
@@ -59,38 +83,48 @@ const SodiumCalculator: React.FC = () => {
     // 1. Calculate TBW (Total Body Water)
     let tbwFactor = 0.6;
     if (sex === 'male') {
-      tbwFactor = a > 60 ? 0.5 : 0.6; // Assuming cutoff > 60 includes 60 for simplicity or strictly >. Using >60 as "Idoso" logic usually implies >= 65, but prompt said >60.
+      tbwFactor = a > 60 ? 0.5 : 0.6; 
     } else {
       tbwFactor = a > 60 ? 0.45 : 0.5;
     }
     const tbw = w * tbwFactor;
 
-    // 2. Alert Check
-    const diff = Math.abs(naTarg - naCurr);
+    // 2. Alert Check & Logic Selection
     let alertMsg = null;
+    let solutionsMap = activeTab === 'hypo' ? HYPO_SOLUTIONS : HYPER_SOLUTIONS;
+    
+    // Fallback if solution key is invalid for current tab (during transition)
+    if (!solutionsMap[solution]) return;
+
+    const diff = Math.abs(naTarg - naCurr);
+    
+    // Safety Alert Rule
     if (diff > 8) {
-      alertMsg = "Alerta: variação máxima recomendada é de 8-10 mEq/L nas primeiras 24h (ideal 6-8).";
-    }
-    // Check if target is actually lower for hypernatremia
-    if (naTarg >= naCurr) {
-        // Technically user might want to increase Na in Hyper if input wrong, but assume correction means lowering.
-        // We won't block, but math will result in negative volume if we don't handle abs.
+       alertMsg = "Alerta: variação máxima de 6-8 meq/dia";
     }
 
     // 3. Adrogué-Madias Formula
     // DeltaNa = (Na_infusate - Na_serum) / (TBW + 1)
-    const naSol = SOLUTIONS[solution].na;
+    const naSol = solutionsMap[solution].na;
     const deltaNaPerLiter = (naSol - naCurr) / (tbw + 1);
 
     // 4. Volume Needed
     // Volume = (Target - Current) / DeltaNa_per_Liter
-    // Example: Current 160, Target 152. Diff = -8.
-    // Solution SG5 (0). TBW 40. Delta/L = (0-160)/41 = -3.9
-    // Vol = -8 / -3.9 = 2.05 L
-    
     let volNeeded = 0;
+    
     if (deltaNaPerLiter !== 0) {
         volNeeded = (naTarg - naCurr) / deltaNaPerLiter;
+    }
+    
+    // If volume is negative (wrong direction of treatment), display 0 or handle
+    if (volNeeded < 0) {
+        // Technically possible if user wants to lower Na but uses 3% NaCl, 
+        // or wants to raise Na but uses pure water. 
+        // We will just show the math result, but it might be confusing. 
+        // Let's rely on the user picking the right solution. 
+        // Ideally we could clamp to 0, but showing negative indicates wrong config.
+        // For this UI, let's take ABS for rate but alert? 
+        // No, let's keep raw. If vol is negative, rate is negative.
     }
 
     // 5. Rate (mL/h in 24h)
@@ -105,6 +139,8 @@ const SodiumCalculator: React.FC = () => {
       alert: alertMsg
     });
   };
+
+  const currentSolutions = activeTab === 'hypo' ? HYPO_SOLUTIONS : HYPER_SOLUTIONS;
 
   return (
     <div className="space-y-4">
@@ -136,16 +172,17 @@ const SodiumCalculator: React.FC = () => {
         </button>
       </div>
 
-      {/* --- HYPERNATREMIA CALCULATOR --- */}
-      {activeTab === 'hyper' && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-fadeIn">
-          <div className="bg-red-50 p-4 border-b border-red-100">
-            <h3 className="font-bold text-red-800 flex items-center gap-2">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden animate-fadeIn">
+          {/* Header */}
+          <div className={`p-4 border-b ${activeTab === 'hypo' ? 'bg-blue-50 border-blue-100' : 'bg-red-50 border-red-100'}`}>
+            <h3 className={`font-bold flex items-center gap-2 ${activeTab === 'hypo' ? 'text-blue-800' : 'text-red-800'}`}>
               <Calculator className="w-5 h-5" />
-              Calculadora de Hipernatremia
+              {activeTab === 'hypo' ? 'Calculadora de Hiponatremia' : 'Calculadora de Hipernatremia'}
             </h3>
-            <p className="text-xs text-red-600 mt-1">
-              Correção do déficit de água livre (Fórmula de Adrogué-Madias).
+            <p className={`text-xs mt-1 ${activeTab === 'hypo' ? 'text-blue-600' : 'text-red-600'}`}>
+               {activeTab === 'hypo' 
+                 ? 'Correção para aumentar o sódio sérico (Fórmula de Adrogué-Madias).' 
+                 : 'Correção do déficit de água livre (Fórmula de Adrogué-Madias).'}
             </p>
           </div>
 
@@ -159,7 +196,8 @@ const SodiumCalculator: React.FC = () => {
                     type="number" 
                     value={weight}
                     onChange={e => setWeight(e.target.value)}
-                    className="w-full border-slate-200 rounded-lg focus:ring-red-500 focus:border-red-500"
+                    className={`w-full border-slate-200 rounded-lg focus:ring-2 border outline-none py-2 px-3 shadow-sm
+                        ${activeTab === 'hypo' ? 'focus:ring-blue-500 focus:border-blue-500' : 'focus:ring-red-500 focus:border-red-500'}`}
                     placeholder="Ex: 70"
                   />
                </div>
@@ -169,7 +207,8 @@ const SodiumCalculator: React.FC = () => {
                     type="number" 
                     value={age}
                     onChange={e => setAge(e.target.value)}
-                    className="w-full border-slate-200 rounded-lg focus:ring-red-500 focus:border-red-500"
+                    className={`w-full border-slate-200 rounded-lg focus:ring-2 border outline-none py-2 px-3 shadow-sm
+                        ${activeTab === 'hypo' ? 'focus:ring-blue-500 focus:border-blue-500' : 'focus:ring-red-500 focus:border-red-500'}`}
                     placeholder="Anos"
                   />
                </div>
@@ -201,8 +240,9 @@ const SodiumCalculator: React.FC = () => {
                       type="number" 
                       value={currentNa}
                       onChange={e => setCurrentNa(e.target.value)}
-                      className="w-full border-slate-200 rounded-lg focus:ring-red-500 focus:border-red-500 pr-8"
-                      placeholder="160"
+                      className={`w-full border-slate-200 rounded-lg focus:ring-2 border outline-none py-2 px-3 shadow-sm pr-8
+                        ${activeTab === 'hypo' ? 'focus:ring-blue-500 focus:border-blue-500' : 'focus:ring-red-500 focus:border-red-500'}`}
+                      placeholder={activeTab === 'hypo' ? "120" : "160"}
                     />
                     <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">mEq</span>
                   </div>
@@ -214,8 +254,9 @@ const SodiumCalculator: React.FC = () => {
                       type="number" 
                       value={targetNa}
                       onChange={e => setTargetNa(e.target.value)}
-                      className="w-full border-slate-200 rounded-lg focus:ring-red-500 focus:border-red-500 pr-8"
-                      placeholder="152"
+                      className={`w-full border-slate-200 rounded-lg focus:ring-2 border outline-none py-2 px-3 shadow-sm pr-8
+                        ${activeTab === 'hypo' ? 'focus:ring-blue-500 focus:border-blue-500' : 'focus:ring-red-500 focus:border-red-500'}`}
+                      placeholder={activeTab === 'hypo' ? "128" : "152"}
                     />
                     <span className="absolute right-3 top-2.5 text-xs text-slate-400 font-bold">mEq</span>
                   </div>
@@ -226,18 +267,18 @@ const SodiumCalculator: React.FC = () => {
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase mb-2">Solução para Reposição</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                 {Object.keys(SOLUTIONS).map((key) => (
+                 {Object.keys(currentSolutions).map((key) => (
                    <button
                      key={key}
                      onClick={() => setSolution(key)}
                      className={`px-3 py-3 text-xs sm:text-sm font-medium rounded-lg border text-center transition-all
                        ${solution === key 
-                         ? 'bg-red-600 text-white border-red-600 ring-2 ring-red-200 ring-offset-1' 
+                         ? (activeTab === 'hypo' ? 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-200 ring-offset-1' : 'bg-red-600 text-white border-red-600 ring-2 ring-red-200 ring-offset-1')
                          : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                        }
                      `}
                    >
-                     {SOLUTIONS[key].label}
+                     {currentSolutions[key].label}
                    </button>
                  ))}
               </div>
@@ -245,25 +286,25 @@ const SodiumCalculator: React.FC = () => {
 
             {/* 4. Results & Alerts */}
             {result && result.alert && (
-               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-3">
+               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-3 animate-fadeIn">
                  <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
                  <p className="text-sm text-yellow-800 font-medium">{result.alert}</p>
                </div>
             )}
 
             {result && (
-              <div className="bg-slate-800 text-white rounded-xl p-5 shadow-lg space-y-4">
+              <div className="bg-slate-800 text-white rounded-xl p-5 shadow-lg space-y-4 animate-fadeIn">
                  <div className="flex justify-between items-end border-b border-slate-600 pb-4">
                     <div>
                       <p className="text-slate-400 text-xs uppercase font-bold tracking-wider">Volume Total em 24h</p>
                       <p className="text-3xl font-bold text-white mt-1">
-                        {result.volNeeded > 0 ? result.volNeeded.toFixed(2) : '0.00'} <span className="text-lg text-slate-400 font-normal">Litros</span>
+                        {result.volNeeded > 0 ? result.volNeeded.toFixed(2) : '---'} <span className="text-lg text-slate-400 font-normal">Litros</span>
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-slate-400 text-xs uppercase font-bold tracking-wider">Vazão (Bomba)</p>
-                      <p className="text-3xl font-bold text-green-400 mt-1">
-                        {result.rate > 0 ? result.rate.toFixed(1) : '0.0'} <span className="text-lg text-green-600/70 font-normal">mL/h</span>
+                      <p className={`text-3xl font-bold mt-1 ${activeTab === 'hypo' ? 'text-blue-400' : 'text-green-400'}`}>
+                        {result.rate > 0 ? result.rate.toFixed(1) : '---'} <span className={`text-lg font-normal ${activeTab === 'hypo' ? 'text-blue-600/70' : 'text-green-600/70'}`}>mL/h</span>
                       </p>
                     </div>
                  </div>
@@ -281,9 +322,9 @@ const SodiumCalculator: React.FC = () => {
               </div>
             )}
 
-            {/* 5. Special NaCl 0.45% Info */}
-            {solution === 'nacl045' && (
-               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            {/* 5. Recipes (NaCl 0.45% or NaCl 3%) */}
+            {activeTab === 'hyper' && solution === 'nacl045' && (
+               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 animate-fadeIn">
                  <h4 className="text-blue-800 font-bold text-sm mb-3 flex items-center gap-2">
                    <Info className="w-4 h-4" />
                    Como preparar NaCl 0,45%
@@ -298,25 +339,24 @@ const SodiumCalculator: React.FC = () => {
                </div>
             )}
 
-          </div>
-        </div>
-      )}
+            {activeTab === 'hypo' && solution === 'nacl3' && (
+               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 animate-fadeIn">
+                 <h4 className="text-blue-800 font-bold text-sm mb-3 flex items-center gap-2">
+                   <Info className="w-4 h-4" />
+                   Como preparar NaCl 3%
+                 </h4>
+                 <ul className="space-y-2">
+                    {NACL3_RECIPES.map((recipe, idx) => (
+                      <li key={idx} className="text-xs text-blue-700 bg-white/50 p-2 rounded border border-blue-100/50">
+                        • {recipe}
+                      </li>
+                    ))}
+                 </ul>
+               </div>
+            )}
 
-      {/* --- HYPONATREMIA PLACEHOLDER --- */}
-      {activeTab === 'hypo' && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="bg-blue-50 p-4 border-b border-blue-100">
-             <h3 className="font-bold text-blue-800 flex items-center gap-2">
-               <Droplet className="w-5 h-5" />
-               Correção de Hiponatremia
-             </h3>
-          </div>
-          <div className="p-8 text-center opacity-60">
-             <Activity className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-             <p className="text-slate-500 text-sm">A calculadora de Hiponatremia será implementada em breve.</p>
           </div>
         </div>
-      )}
     </div>
   );
 };
