@@ -27,14 +27,14 @@ const SodiumCalculator: React.FC = () => {
   
   // Solutions for Hypernatremia (Lowering Na)
   const HYPER_SOLUTIONS: Record<string, { label: string; na: number }> = {
-    'sg5': { label: 'Soro Glicosado 5%', na: 0 },
+    'sg5': { label: 'Soro Glicosado 5% (0 mEq)', na: 0 },
     'nacl045': { label: 'NaCl 0,45% (77 mEq)', na: 77 },
-    'sf09': { label: 'Soro Fisiológico 0,9%', na: 154 },
+    'sf09': { label: 'Soro Fisiológico 0,9% (154 mEq)', na: 154 },
   };
 
   // Solutions for Hyponatremia (Raising Na)
   const HYPO_SOLUTIONS: Record<string, { label: string; na: number }> = {
-    'sf09': { label: 'Soro Fisiológico 0,9%', na: 154 },
+    'sf09': { label: 'Soro Fisiológico 0,9% (154 mEq)', na: 154 },
     'nacl3': { label: 'NaCl 3% (513 mEq)', na: 513 },
   };
 
@@ -154,9 +154,10 @@ const SodiumCalculator: React.FC = () => {
               : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
             }`}
         >
-          <span className="flex items-center gap-2">
-            <span className="text-lg">↓</span> Hiponatremia
-          </span>
+          <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+            <span className="flex items-center gap-1"><span className="text-lg">↓</span> Hiponatremia</span>
+            <span className={`text-xs font-normal ${activeTab === 'hypo' ? 'text-blue-100' : 'text-slate-400'}`}>(Na &lt; 135)</span>
+          </div>
         </button>
         <button
           onClick={() => setActiveTab('hyper')}
@@ -166,9 +167,10 @@ const SodiumCalculator: React.FC = () => {
               : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
             }`}
         >
-          <span className="flex items-center gap-2">
-            <span className="text-lg">↑</span> Hipernatremia
-          </span>
+          <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+            <span className="flex items-center gap-1"><span className="text-lg">↑</span> Hipernatremia</span>
+            <span className={`text-xs font-normal ${activeTab === 'hyper' ? 'text-red-100' : 'text-slate-400'}`}>(Na &gt; 145)</span>
+          </div>
         </button>
       </div>
 
@@ -177,7 +179,7 @@ const SodiumCalculator: React.FC = () => {
           <div className={`p-4 border-b ${activeTab === 'hypo' ? 'bg-blue-50 border-blue-100' : 'bg-red-50 border-red-100'}`}>
             <h3 className={`font-bold flex items-center gap-2 ${activeTab === 'hypo' ? 'text-blue-800' : 'text-red-800'}`}>
               <Calculator className="w-5 h-5" />
-              {activeTab === 'hypo' ? 'Calculadora de Hiponatremia' : 'Calculadora de Hipernatremia'}
+              {activeTab === 'hypo' ? 'Calculadora de Hiponatremia (Na < 135)' : 'Calculadora de Hipernatremia (Na > 145)'}
             </h3>
             <p className={`text-xs mt-1 ${activeTab === 'hypo' ? 'text-blue-600' : 'text-red-600'}`}>
                {activeTab === 'hypo' 

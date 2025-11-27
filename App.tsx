@@ -4,6 +4,7 @@ import { CATEGORIES, DRUGS } from './constants';
 import { Drug } from './types';
 import DrugCalculator from './components/DrugCalculator';
 import SodiumCalculator from './components/SodiumCalculator';
+import PotassiumCalculator from './components/PotassiumCalculator';
 import { 
   Activity, 
   HeartPulse, 
@@ -16,10 +17,11 @@ import {
   Syringe, 
   Home, 
   Stethoscope,
-  Wind
+  Wind,
+  Zap
 } from 'lucide-react';
 
-type ViewState = 'home' | 'drugs' | 'electrolytes' | 'sodium';
+type ViewState = 'home' | 'drugs' | 'electrolytes' | 'sodium' | 'potassium';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewState>('home');
@@ -296,6 +298,14 @@ function App() {
 
   const renderElectrolytesMenu = () => (
     <div className="animate-fadeIn">
+      <button 
+        onClick={() => setCurrentView('home')}
+        className="mb-4 flex items-center text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4 mr-1" />
+        Voltar para Início
+      </button>
+
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
             <Beaker className="w-6 h-6 text-teal-600" />
@@ -305,6 +315,7 @@ function App() {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
+         {/* Sodium */}
          <button 
             onClick={() => setCurrentView('sodium')}
             className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-teal-400 transition-all flex items-center justify-between group"
@@ -323,13 +334,24 @@ function App() {
             </div>
          </button>
          
-         <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 border-dashed flex items-center gap-4 opacity-60">
-             <div className="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 font-bold text-lg">K+</div>
-             <div>
-                <h3 className="font-bold text-slate-400">Potássio</h3>
-                <p className="text-xs text-slate-400">Em breve</p>
+         {/* Potassium - Now Active */}
+         <button 
+            onClick={() => setCurrentView('potassium')}
+            className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-purple-400 transition-all flex items-center justify-between group"
+         >
+             <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-700 font-bold text-lg">
+                    K+
+                </div>
+                <div className="text-left">
+                  <h3 className="font-bold text-slate-800 group-hover:text-purple-700 transition-colors">Potássio</h3>
+                  <p className="text-xs text-slate-500">Hipocalemia e Hipercalemia</p>
+                </div>
              </div>
-         </div>
+             <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-purple-50">
+               <ChevronDown className="w-5 h-5 text-slate-400 transform -rotate-90 group-hover:text-purple-600" />
+             </div>
+         </button>
       </div>
     </div>
   );
@@ -356,6 +378,28 @@ function App() {
     </div>
   );
 
+  const renderPotassiumCalculator = () => (
+    <div className="animate-fadeIn">
+      <button 
+        onClick={() => setCurrentView('electrolytes')}
+        className="mb-4 flex items-center text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4 mr-1" />
+        Voltar para Hidroeletrolíticos
+      </button>
+      
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          <Zap className="w-6 h-6 text-purple-500" />
+          Distúrbios do Potássio
+        </h2>
+        <p className="text-slate-500 text-sm">Correção e manejo da Hipocalemia e Hipercalemia.</p>
+      </div>
+
+      <PotassiumCalculator />
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       {renderHeader()}
@@ -365,6 +409,7 @@ function App() {
         {currentView === 'drugs' && renderDrugCalculator()}
         {currentView === 'electrolytes' && renderElectrolytesMenu()}
         {currentView === 'sodium' && renderSodiumCalculator()}
+        {currentView === 'potassium' && renderPotassiumCalculator()}
       </main>
 
       <footer className="bg-slate-800 text-slate-400 py-6 mt-auto">
