@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Calculator, AlertTriangle, Info, CheckCircle, XCircle, Pill, Activity, Syringe, Wind } from 'lucide-react';
+import { Calculator, AlertTriangle, Info, CheckCircle, XCircle, Pill, Activity, Syringe, Wind, AlertCircle } from 'lucide-react';
 
 const PotassiumCalculator: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'hypo' | 'hyper'>('hypo');
@@ -119,7 +119,199 @@ const PotassiumCalculator: React.FC = () => {
     </div>
   );
 
-  // --- LOGIC DISPATCHER ---
+  const renderHypoOralOptions = () => (
+     <div className="space-y-3">
+        <div className="bg-white/60 p-3 rounded border border-purple-100">
+           <div className="flex items-center justify-between mb-1">
+             <span className="font-bold text-purple-900 text-sm">Cloreto de Potássio (Drágeas)</span>
+             <span className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded">600 mg</span>
+           </div>
+           <p className="text-sm text-purple-800">1 a 2 drágeas VO em até 6/6 horas.</p>
+        </div>
+        <div className="text-center text-xs text-purple-400 font-bold uppercase">- OU -</div>
+        <div className="bg-white/60 p-3 rounded border border-purple-100">
+           <div className="flex items-center justify-between mb-1">
+             <span className="font-bold text-purple-900 text-sm">Cloreto de Potássio (Xarope)</span>
+             <span className="text-xs bg-purple-200 text-purple-800 px-2 py-0.5 rounded">6% (60mg/mL)</span>
+           </div>
+           <p className="text-sm text-purple-800">10 a 20 mL VO em até 6/6 horas.</p>
+        </div>
+     </div>
+  );
+
+  const renderHypoSafetyNotes = () => (
+      <div className="mt-6 space-y-4">
+         {/* Safety Alerts */}
+         <div className="bg-slate-800 text-slate-300 rounded-lg p-4 text-xs space-y-2">
+            <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                <p><strong className="text-white">Concentração Máxima:</strong> Veia Periférica (50 mEq/L) | Veia Central (100 mEq/L).</p>
+            </div>
+            <div className="flex items-start gap-2">
+                <Activity className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                <p><strong className="text-white">Velocidade de Infusão:</strong> Veia Periférica: 5-10 mEq/h (Ideal) | Veia Central: 20-30 mEq/h (c/ monitorização ECG).</p>
+            </div>
+         </div>
+
+         {/* Reference Table */}
+         <div className="bg-white border border-slate-200 rounded-lg overflow-hidden">
+            <div className="bg-slate-50 px-4 py-2 border-b border-slate-200">
+                <span className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
+                    <Info className="w-3 h-3" /> Referência de Apresentação
+                </span>
+            </div>
+            <table className="w-full text-sm text-left">
+                <thead className="bg-slate-100 text-slate-600 font-bold text-xs uppercase">
+                    <tr>
+                        <th className="px-4 py-2">Produto</th>
+                        <th className="px-4 py-2">Apresentação</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                    <tr className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-medium text-slate-700">Cloreto de Potássio 10%</td>
+                        <td className="px-4 py-3 text-slate-600">1 AMP (10mL) = 13,4 mEq</td>
+                    </tr>
+                    <tr className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-medium text-slate-700">Cloreto de Potássio 19,1%</td>
+                        <td className="px-4 py-3 text-slate-600">1 AMP (10mL) = 25 mEq</td>
+                    </tr>
+                    <tr className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-medium text-slate-700">Cloreto de Potássio 6% Xarope</td>
+                        <td className="px-4 py-3 text-slate-600">15mL = 12 mEq</td>
+                    </tr>
+                    <tr className="hover:bg-slate-50">
+                        <td className="px-4 py-3 font-medium text-slate-700">Cloreto de Potássio 600mg CP</td>
+                        <td className="px-4 py-3 text-slate-600">8 mEq / Cápsula</td>
+                    </tr>
+                </tbody>
+            </table>
+         </div>
+      </div>
+  );
+
+  // --- LOGIC DISPATCHERS ---
+
+  const renderHypokalemiaProtocol = () => {
+    if (!currentK || isNaN(kVal)) {
+        return (
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 text-center">
+                <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Info className="w-6 h-6 text-slate-400" />
+                </div>
+                <h4 className="text-slate-700 font-bold mb-1">Informe o nível de Potássio</h4>
+                <p className="text-slate-500 text-sm">Insira o valor sérico para visualizar o protocolo.</p>
+            </div>
+        );
+    }
+
+    // CHECK FOR NORMAL RANGE (> 3.4)
+    if (kVal > 3.4) {
+        return (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-800 text-sm font-medium flex items-center gap-2">
+                 <CheckCircle className="w-5 h-5 text-green-600" />
+                 Potássio dentro dos limites de segurança para este protocolo (&gt; 3,4).
+            </div>
+        );
+    }
+
+    // MILD/MODERATE (3.1 - 3.4)
+    if (kVal >= 3.1) {
+        return (
+            <div className="animate-fadeIn">
+                 <div className="bg-purple-100 border border-purple-300 rounded-lg p-3 mb-4 flex items-center gap-2">
+                    <Info className="w-5 h-5 text-purple-600" />
+                    <h4 className="font-bold text-purple-800">Hipocalemia Leve a Moderada (3,1 - 3,4)</h4>
+                 </div>
+
+                 {/* OPTION 1: ORAL */}
+                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+                    {renderSectionHeader('Opção 01', 'Reposição Via Oral', 'text-purple-800 border-purple-200')}
+                    <div className="flex items-start gap-3">
+                        <Pill className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                        <div className="w-full">
+                           {renderHypoOralOptions()}
+                        </div>
+                    </div>
+                 </div>
+
+                 {/* OPTION 2: IV */}
+                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    {renderSectionHeader('Opção 02', 'Reposição Endovenosa', 'text-blue-800 border-blue-200')}
+                    <p className="text-xs text-blue-600 mb-2 font-medium uppercase tracking-wide">Se impossibilidade de via oral</p>
+                    
+                    <div className="flex items-start gap-3">
+                        <Syringe className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-blue-900 bg-white/60 p-3 rounded border border-blue-100 w-full">
+                            <p className="font-bold">Cloreto de Potássio 19,1%</p>
+                            <p>15 mL + 895 mL SF 0,9%</p>
+                            <p className="text-blue-700 mt-1 text-xs font-semibold">Correr em 4-6 horas em BIC.</p>
+                        </div>
+                    </div>
+                 </div>
+                 
+                 {renderHypoSafetyNotes()}
+            </div>
+        );
+    }
+
+    // SEVERE (< 3.0)
+    // Assuming anything < 3.1 falls here based on prompt logic gap.
+    return (
+        <div className="animate-fadeIn">
+             <div className="bg-red-100 border border-red-300 rounded-lg p-3 mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+                <h4 className="font-bold text-red-800">Hipocalemia Grave (&lt; 3,0)</h4>
+             </div>
+
+             {/* STEP 1: IV */}
+             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                {renderSectionHeader('Passo 01', 'Reposição Endovenosa', 'text-red-800 border-red-200')}
+                
+                <div className="space-y-3">
+                    {/* Peripheral */}
+                    <div className="flex items-start gap-3 bg-white/60 p-3 rounded border border-red-100">
+                        <Syringe className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-red-900 w-full">
+                            <div className="flex justify-between mb-1">
+                                <p className="font-bold">Veia Periférica</p>
+                                <span className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded uppercase">Preferencial</span>
+                            </div>
+                            <p>KCl 19,1% - <span className="font-bold">20 mL</span> + 490 mL SF 0,9%</p>
+                            <p className="text-red-700 mt-1 text-xs font-semibold">Correr em 6 horas em BIC.</p>
+                        </div>
+                    </div>
+
+                    {/* Central */}
+                    <div className="flex items-start gap-3 bg-white/60 p-3 rounded border border-red-100">
+                        <Activity className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-red-900 w-full">
+                            <div className="flex justify-between mb-1">
+                                <p className="font-bold">Veia Central</p>
+                                <span className="text-[10px] font-bold bg-red-100 text-red-700 px-2 py-0.5 rounded uppercase">Monitorização</span>
+                            </div>
+                            <p>KCl 19,1% - <span className="font-bold">20 mL</span> + 480 mL SF 0,9%</p>
+                            <p className="text-red-700 mt-1 text-xs font-semibold">Correr em 3-4 horas em BIC.</p>
+                        </div>
+                    </div>
+                </div>
+             </div>
+
+             {/* STEP 2: ORAL */}
+             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+                {renderSectionHeader('Passo 02', 'Associar Via Oral', 'text-purple-800 border-purple-200')}
+                <div className="flex items-start gap-3">
+                    <Pill className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                    <div className="w-full">
+                       {renderHypoOralOptions()}
+                    </div>
+                </div>
+             </div>
+
+             {renderHypoSafetyNotes()}
+        </div>
+    );
+  };
 
   const renderHyperkalemiaProtocol = () => {
     if (!currentK || isNaN(kVal)) {
@@ -247,7 +439,8 @@ const PotassiumCalculator: React.FC = () => {
     }
 
     return (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-800 text-sm">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-800 text-sm flex items-center gap-2">
+             <CheckCircle className="w-5 h-5 text-green-600" />
              Potássio dentro dos limites de segurança para este protocolo (&lt; 5,6).
         </div>
     );
@@ -259,7 +452,7 @@ const PotassiumCalculator: React.FC = () => {
       {/* Tab Switcher */}
       <div className="bg-white p-1 rounded-xl border border-slate-200 shadow-sm flex">
         <button
-          onClick={() => setActiveTab('hypo')}
+          onClick={() => { setActiveTab('hypo'); setCurrentK(''); setHasEcgChanges(null); }}
           className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2
             ${activeTab === 'hypo' 
               ? 'bg-purple-600 text-white shadow-sm' 
@@ -272,7 +465,7 @@ const PotassiumCalculator: React.FC = () => {
           </div>
         </button>
         <button
-          onClick={() => setActiveTab('hyper')}
+          onClick={() => { setActiveTab('hyper'); setCurrentK(''); setHasEcgChanges(null); }}
           className={`flex-1 py-3 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2
             ${activeTab === 'hyper' 
               ? 'bg-red-600 text-white shadow-sm' 
@@ -295,7 +488,7 @@ const PotassiumCalculator: React.FC = () => {
             </h3>
             <p className={`text-xs mt-1 ${activeTab === 'hypo' ? 'text-purple-600' : 'text-red-600'}`}>
                {activeTab === 'hypo' 
-                 ? 'Calculadora para reposição de cloreto de potássio.' 
+                 ? 'Protocolo para reposição de cloreto de potássio.' 
                  : 'Protocolo de redução dos níveis de potássio sérico.'}
             </p>
           </div>
@@ -322,19 +515,7 @@ const PotassiumCalculator: React.FC = () => {
             </div>
 
             {/* Logic Content */}
-            {activeTab === 'hyper' ? (
-                renderHyperkalemiaProtocol()
-            ) : (
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 text-center">
-                    <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Info className="w-6 h-6 text-slate-400" />
-                    </div>
-                    <h4 className="text-slate-700 font-bold mb-1">Aguardando Protocolo de Hipocalemia</h4>
-                    <p className="text-slate-500 text-sm">
-                        Calculadora em desenvolvimento.
-                    </p>
-                </div>
-            )}
+            {activeTab === 'hyper' ? renderHyperkalemiaProtocol() : renderHypokalemiaProtocol()}
 
           </div>
       </div>
