@@ -5,6 +5,7 @@ import { Drug } from './types';
 import DrugCalculator from './components/DrugCalculator';
 import SodiumCalculator from './components/SodiumCalculator';
 import PotassiumCalculator from './components/PotassiumCalculator';
+import MagnesiumCalculator from './components/MagnesiumCalculator';
 import { 
   Activity, 
   HeartPulse, 
@@ -18,10 +19,12 @@ import {
   Home, 
   Stethoscope,
   Wind,
-  Zap
+  Zap,
+  BookOpen,
+  Layers
 } from 'lucide-react';
 
-type ViewState = 'home' | 'drugs' | 'electrolytes' | 'sodium' | 'potassium';
+type ViewState = 'home' | 'drugs' | 'electrolytes' | 'sodium' | 'potassium' | 'magnesium';
 
 function App() {
   const [currentView, setCurrentView] = useState<ViewState>('home');
@@ -123,21 +126,11 @@ function App() {
           </div>
           <h2 className="text-xl font-bold text-slate-800 mb-2">Distúrbios Hidroeletrolíticos</h2>
           <p className="text-sm text-slate-500">
-            Correção de Sódio, Potássio e ferramentas para manejo metabólico.
+            Correção de Sódio, Potássio e Magnésio.
           </p>
         </button>
 
         {/* Card 3: Placeholders */}
-        <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 border-dashed opacity-75">
-          <div className="w-12 h-12 bg-slate-200 rounded-lg flex items-center justify-center mb-4">
-            <Activity className="w-6 h-6 text-slate-400" />
-          </div>
-          <h2 className="text-xl font-bold text-slate-400 mb-2">Scores e Escalas</h2>
-          <p className="text-sm text-slate-400">
-            Glasgow, SOFA, APACHE II (Em breve).
-          </p>
-        </div>
-
         <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 border-dashed opacity-75">
           <div className="w-12 h-12 bg-slate-200 rounded-lg flex items-center justify-center mb-4">
             <Wind className="w-6 h-6 text-slate-400" />
@@ -334,7 +327,7 @@ function App() {
             </div>
          </button>
          
-         {/* Potassium - Now Active */}
+         {/* Potassium */}
          <button 
             onClick={() => setCurrentView('potassium')}
             className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-purple-400 transition-all flex items-center justify-between group"
@@ -350,6 +343,25 @@ function App() {
              </div>
              <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-purple-50">
                <ChevronDown className="w-5 h-5 text-slate-400 transform -rotate-90 group-hover:text-purple-600" />
+             </div>
+         </button>
+
+         {/* Magnesium */}
+         <button 
+            onClick={() => setCurrentView('magnesium')}
+            className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-amber-400 transition-all flex items-center justify-between group"
+         >
+             <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-700 font-bold text-lg">
+                    Mg
+                </div>
+                <div className="text-left">
+                  <h3 className="font-bold text-slate-800 group-hover:text-amber-700 transition-colors">Magnésio</h3>
+                  <p className="text-xs text-slate-500">Hipomagnesemia e Hipermagnesemia</p>
+                </div>
+             </div>
+             <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center group-hover:bg-amber-50">
+               <ChevronDown className="w-5 h-5 text-slate-400 transform -rotate-90 group-hover:text-amber-600" />
              </div>
          </button>
       </div>
@@ -400,6 +412,28 @@ function App() {
     </div>
   );
 
+  const renderMagnesiumCalculator = () => (
+    <div className="animate-fadeIn">
+      <button 
+        onClick={() => setCurrentView('electrolytes')}
+        className="mb-4 flex items-center text-sm font-medium text-slate-500 hover:text-blue-600 transition-colors"
+      >
+        <ArrowLeft className="w-4 h-4 mr-1" />
+        Voltar para Hidroeletrolíticos
+      </button>
+      
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+          <Layers className="w-6 h-6 text-amber-500" />
+          Distúrbios do Magnésio
+        </h2>
+        <p className="text-slate-500 text-sm">Correção e manejo da Hipomagnesemia e Hipermagnesemia.</p>
+      </div>
+
+      <MagnesiumCalculator />
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
       {renderHeader()}
@@ -410,6 +444,7 @@ function App() {
         {currentView === 'electrolytes' && renderElectrolytesMenu()}
         {currentView === 'sodium' && renderSodiumCalculator()}
         {currentView === 'potassium' && renderPotassiumCalculator()}
+        {currentView === 'magnesium' && renderMagnesiumCalculator()}
       </main>
 
       <footer className="bg-slate-800 text-slate-400 py-6 mt-auto">
